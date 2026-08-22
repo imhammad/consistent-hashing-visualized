@@ -4,7 +4,7 @@
   
   A high-performance, interactive visualizer explaining how modern distributed caches and databases scale horizontally without rehashing all their data.
 
-  <img src="./demo.gif" alt="Consistent Hashing Visualized Demo" width="800"/>
+  <img src="./consisten-hashing-demo.gif" alt="Consistent Hashing Visualized Demo" width="800"/>
 </div>
 
 ### Live Demo
