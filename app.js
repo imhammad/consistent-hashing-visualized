@@ -138,24 +138,63 @@ const toggleVnodes = document.getElementById('virtual-nodes-toggle');
 /* =========================================
    4. Canvas Rendering Engine
    ========================================= */
+/* =========================================
+   4. Canvas Rendering Engine (ANIMATED)
+   ========================================= */
+let animationTime = 0;
+
 function drawRing() {
-  // Clear the canvas for the new frame
+  animationTime += 0.015;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw the base ring track
+  // 1. Draw the Base Ring
   ctx.beginPath();
   ctx.arc(CENTER, CENTER, RADIUS, 0, 2 * Math.PI);
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-  ctx.lineWidth = 4;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+  ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Draw Servers (Nodes) on the ring
+  // 2. Draw Data Keys & Flowing Connections
+  cluster.keys.forEach(key => {
+    const keyRad = (key.hash - 90) * (Math.PI / 180);
+    const keyX = CENTER + (RADIUS - 30) * Math.cos(keyRad);
+    const keyY = CENTER + (RADIUS - 30) * Math.sin(keyRad);
+
+    // Find assigned server for connection line
+    const server = cluster.ring.find(n => n.nodeName === key.assignedServer);
+    if (server) {
+      const srvRad = (server.hash - 90) * (Math.PI / 180);
+      const srvX = CENTER + RADIUS * Math.cos(srvRad);
+      const srvY = CENTER + RADIUS * Math.sin(srvRad);
+
+      // Draw Animated Data Stream
+      ctx.beginPath();
+      ctx.moveTo(keyX, keyY);
+      ctx.quadraticCurveTo(CENTER, CENTER, srvX, srvY);
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
+      ctx.setLineDash([4, 12]);
+      ctx.lineDashOffset = -animationTime * 50; // This makes the line "flow"
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.setLineDash([]); // Reset for other shapes
+    }
+
+    // Draw Glowing Key
+    ctx.beginPath();
+    ctx.arc(keyX, keyY, 4, 0, 2 * Math.PI);
+    ctx.fillStyle = '#fbbf24';
+    ctx.shadowColor = '#fbbf24';
+    // Pulsing effect based on time
+    ctx.shadowBlur = 10 + Math.sin(animationTime * 5) * 5; 
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+
+  // 3. Draw Servers (Nodes)
   cluster.ring.forEach(node => {
-    // Hide virtual nodes visually if the user toggles them off
     if (node.isVirtual && !toggleVnodes.checked) return;
 
-    // Convert degrees to radians (subtract 90 to start at the top, 12 o'clock)
-    const rad = (node.hash - 90) * (Math.PI / 180); 
+    const rad = (node.hash - 90) * (Math.PI / 180);
     const x = CENTER + RADIUS * Math.cos(rad);
     const y = CENTER + RADIUS * Math.sin(rad);
 
@@ -164,36 +203,21 @@ function drawRing() {
     ctx.fillStyle = node.isVirtual ? '#374151' : '#06b6d4';
     ctx.fill();
     ctx.strokeStyle = node.isVirtual ? '#06b6d4' : '#fff';
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 2;
     ctx.stroke();
   });
 
-  // Draw Data Keys
-  cluster.keys.forEach(key => {
-    const rad = (key.hash - 90) * (Math.PI / 180);
-    // Render keys slightly inside the main ring track
-    const keyRadius = RADIUS - 30; 
-    const x = CENTER + keyRadius * Math.cos(rad);
-    const y = CENTER + keyRadius * Math.sin(rad);
-
-    ctx.beginPath();
-    ctx.arc(x, y, 5, 0, 2 * Math.PI);
-    ctx.fillStyle = '#fbbf24';
-    ctx.fill();
-    
-    // Add a glowing effect to the data keys
-    ctx.shadowColor = '#fbbf24';
-    ctx.shadowBlur = 10;
-    ctx.stroke();
-    ctx.shadowBlur = 0; // reset
-  });
+  // Loop the animation
+  requestAnimationFrame(drawRing);
 }
+
+// Start the loop once
+requestAnimationFrame(drawRing);
 
 /* =========================================
    5. UI Updates & Event Listeners
    ========================================= */
 function updateUI(remappedCount = 0) {
-  drawRing(); // Redraw the visualizer
   
   // Update Top Stats
   document.getElementById('stat-total-keys').innerText = cluster.keys.length;
