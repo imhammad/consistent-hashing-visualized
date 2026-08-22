@@ -8,7 +8,7 @@
 </div>
 
 ### Live Demo
-[**Click here to view the live visualization**]()
+[**Click here to view the live visualization**](https://imhammad.github.io/consistent-hashing-visualized/)
 
 ## Why I Built This
 I firmly believe that if you truly understand a complex Computer Science concept, you should be able to explain it simply. I learn best by building visual tools. Consistent Hashing is a brilliant system design pattern, but reading pseudocode about it can be confusing. I built this interactive web engine to let developers actually *see* a cache stampede being prevented in real time.
