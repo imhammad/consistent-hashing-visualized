@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consistent Hashing Visualized</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <span class="badge">Distributed Systems</span>
+        <h1>Consistent Hashing <span class="accent">Visualized</span></h1>
+      </div>
+      <p class="subtitle">
+        How modern distributed caches & databases scale horizontally without rehashing all data.
+      </p>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <!-- Left Panel: Controls -->
+      <aside class="panel controls-panel">
+        <h2>Cluster Controls</h2>
+
+        <div class="control-group">
+          <label for="node-name">Add Node (Server)</label>
+          <div class="input-row">
+            <input type="text" id="node-name" placeholder="e.g. Server-D" maxlength="12" />
+            <button id="btn-add-node" class="btn btn-primary">+ Add</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Active Servers (<span id="node-count">0</span>)</label>
+          <div id="node-chips" class="chip-container"></div>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="control-group">
+          <label for="key-input">Add Data Key</label>
+          <div class="input-row">
+            <input type="text" id="key-input" placeholder="e.g. user_session_892" />
+            <button id="btn-add-key" class="btn btn-secondary">Insert</button>
+          </div>
+          <button id="btn-add-random-keys" class="btn btn-outline">+ Add 10 Random Keys</button>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="control-group">
+          <div class="toggle-row">
+            <label for="virtual-nodes-toggle">Virtual Nodes (Replicas)</label>
+            <input type="checkbox" id="virtual-nodes-toggle" checked />
+          </div>
+          <p class="helper-text">Distributes load uniformly across the ring to prevent hot spots.</p>
+        </div>
+
+        <button id="btn-reset" class="btn btn-danger">Reset Ring</button>
+      </aside>
+
+      <!-- Center: Ring Canvas -->
+      <section class="stage-container">
+        <div class="canvas-wrapper">
+          <canvas id="ringCanvas" width="600" height="600"></canvas>
+          <div id="tooltip" class="tooltip hidden"></div>
+        </div>
+        <div class="legend">
+          <span class="legend-item"><span class="dot node-dot"></span> Server Node</span>
+          <span class="legend-item"><span class="dot vnode-dot"></span> Virtual Node</span>
+          <span class="legend-item"><span class="dot key-dot"></span> Data Key</span>
+        </div>
+      </section>
+
+      <!-- Right Panel: Live Stats & Remap Log -->
+      <aside class="panel stats-panel">
+        <h2>Cluster Distribution</h2>
+        
+        <div class="stats-overview">
+          <div class="stat-card">
+            <span class="stat-label">Total Keys</span>
+            <span id="stat-total-keys" class="stat-val">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Remapped (Last Action)</span>
+            <span id="stat-remapped-keys" class="stat-val highlight">0</span>
+          </div>
+        </div>
+
+        <div class="distribution-section">
+          <h3>Load per Server</h3>
+          <div id="load-bars" class="load-bars-container">
+            <p class="empty-state">No servers added yet</p>
+          </div>
+        </div>
+
+        <div class="log-section">
+          <h3>Routing Log</h3>
+          <div id="event-log" class="event-log"></div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Explainer Footer -->
+    <footer class="explainer-card">
+      <div class="explainer-header">
+        <h3>💡 Why Not Standard Modulo Hashing <code>hash(key) % N</code>?</h3>
+      </div>
+      <p>
+        With traditional modulo hashing, adding or removing a single server ($N \to N+1$) causes almost <strong>100% of all keys</strong> to remap to different servers, causing a massive cache stampede. With <strong>Consistent Hashing</strong>, only $k/N$ keys need to move on average when a node is added or removed.
+      </p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
