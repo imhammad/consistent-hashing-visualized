@@ -1,4 +1,5 @@
   <div align="center">
+    
   # Consistent Hashing Visualized
   
   A high-performance, interactive visualizer explaining how modern distributed caches and databases scale horizontally without rehashing all their data.
