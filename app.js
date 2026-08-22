@@ -118,3 +118,197 @@ class ConsistentHashRing {
 
 // Initialize the global cluster state
 const cluster = new ConsistentHashRing(3);
+
+/* =========================================
+   3. DOM Elements & State Setup
+   ========================================= */
+const canvas = document.getElementById('ringCanvas');
+const ctx = canvas.getContext('2d');
+const CENTER = canvas.width / 2;
+const RADIUS = 220;
+
+const btnAddNode = document.getElementById('btn-add-node');
+const inputNode = document.getElementById('node-name');
+const btnAddKey = document.getElementById('btn-add-key');
+const inputKey = document.getElementById('key-input');
+const btnRandomKeys = document.getElementById('btn-add-random-keys');
+const btnReset = document.getElementById('btn-reset');
+const toggleVnodes = document.getElementById('virtual-nodes-toggle');
+
+/* =========================================
+   4. Canvas Rendering Engine
+   ========================================= */
+function drawRing() {
+  // Clear the canvas for the new frame
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw the base ring track
+  ctx.beginPath();
+  ctx.arc(CENTER, CENTER, RADIUS, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // Draw Servers (Nodes) on the ring
+  cluster.ring.forEach(node => {
+    // Hide virtual nodes visually if the user toggles them off
+    if (node.isVirtual && !toggleVnodes.checked) return;
+
+    // Convert degrees to radians (subtract 90 to start at the top, 12 o'clock)
+    const rad = (node.hash - 90) * (Math.PI / 180); 
+    const x = CENTER + RADIUS * Math.cos(rad);
+    const y = CENTER + RADIUS * Math.sin(rad);
+
+    ctx.beginPath();
+    ctx.arc(x, y, node.isVirtual ? 4 : 8, 0, 2 * Math.PI);
+    ctx.fillStyle = node.isVirtual ? '#374151' : '#06b6d4';
+    ctx.fill();
+    ctx.strokeStyle = node.isVirtual ? '#06b6d4' : '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+
+  // Draw Data Keys
+  cluster.keys.forEach(key => {
+    const rad = (key.hash - 90) * (Math.PI / 180);
+    // Render keys slightly inside the main ring track
+    const keyRadius = RADIUS - 30; 
+    const x = CENTER + keyRadius * Math.cos(rad);
+    const y = CENTER + keyRadius * Math.sin(rad);
+
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, 2 * Math.PI);
+    ctx.fillStyle = '#fbbf24';
+    ctx.fill();
+    
+    // Add a glowing effect to the data keys
+    ctx.shadowColor = '#fbbf24';
+    ctx.shadowBlur = 10;
+    ctx.stroke();
+    ctx.shadowBlur = 0; // reset
+  });
+}
+
+/* =========================================
+   5. UI Updates & Event Listeners
+   ========================================= */
+function updateUI(remappedCount = 0) {
+  drawRing(); // Redraw the visualizer
+  
+  // Update Top Stats
+  document.getElementById('stat-total-keys').innerText = cluster.keys.length;
+  document.getElementById('node-count').innerText = cluster.activeServers.size;
+  
+  const remapEl = document.getElementById('stat-remapped-keys');
+  remapEl.innerText = remappedCount;
+  // Flash red if a massive remapping event occurred
+  remapEl.style.color = remappedCount > 0 ? '#f43f5e' : '#9ca3af';
+  setTimeout(() => remapEl.style.color = '', 500);
+
+  // Render Node Chips (Allows user to delete specific servers)
+  const chipsContainer = document.getElementById('node-chips');
+  chipsContainer.innerHTML = '';
+  cluster.activeServers.forEach(server => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.innerHTML = `${server} <span class="chip-remove" onclick="removeServerUI('${server}')">×</span>`;
+    chipsContainer.appendChild(chip);
+  });
+
+  // Calculate and Render Load Distribution Bars
+  const loadContainer = document.getElementById('load-bars');
+  if (cluster.activeServers.size === 0) {
+    loadContainer.innerHTML = '<p class="empty-state">No servers added yet</p>';
+  } else {
+    loadContainer.innerHTML = '';
+    const loadMap = {};
+    cluster.activeServers.forEach(s => loadMap[s] = 0);
+    cluster.keys.forEach(k => {
+      if (loadMap[k.assignedServer] !== undefined) loadMap[k.assignedServer]++;
+    });
+
+    const totalKeys = cluster.keys.length || 1; // prevent division by zero
+    for (const [server, count] of Object.entries(loadMap)) {
+      const pct = Math.round((count / totalKeys) * 100);
+      loadContainer.innerHTML += `
+        <div class="load-bar-item">
+          <div class="load-bar-header">
+            <span>${server}</span>
+            <span>${count} keys (${pct}%)</span>
+          </div>
+          <div class="load-bar-track">
+            <div class="load-bar-fill" style="width: ${pct}%"></div>
+          </div>
+        </div>
+      `;
+    }
+  }
+}
+
+function logEvent(msg, type = 'normal') {
+  const log = document.getElementById('event-log');
+  const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+  const cssClass = type === 'add' ? 'log-action' : (type === 'remove' ? 'log-action removed' : '');
+  
+  // Prepend to top of log
+  log.innerHTML = `<div class="log-entry"><span class="log-time">[${time}]</span> <span class="${cssClass}">${msg}</span></div>` + log.innerHTML;
+}
+
+// Global function so the inline HTML "onclick" inside the chips can access it
+window.removeServerUI = function(serverName) {
+  const remapped = cluster.removeServer(serverName);
+  logEvent(`Server ${serverName} crashed/removed. ${remapped} keys remapped.`, 'remove');
+  updateUI(remapped);
+};
+
+/* --- Button Event Listeners --- */
+btnAddNode.addEventListener('click', () => {
+  const name = inputNode.value.trim() || `Server-${String.fromCharCode(65 + cluster.activeServers.size)}`;
+  if (cluster.activeServers.has(name)) return alert("Server already exists!");
+  
+  const remapped = cluster.addServer(name);
+  logEvent(`Server ${name} joined cluster. ${remapped} keys safely remapped.`, 'add');
+  inputNode.value = '';
+  updateUI(remapped);
+});
+
+btnAddKey.addEventListener('click', () => {
+  if (cluster.activeServers.size === 0) return alert("Spin up a server node first!");
+  const keyId = inputKey.value.trim() || `user_${Math.floor(Math.random()*1000)}`;
+  const assigned = cluster.addDataKey(keyId);
+  logEvent(`Key [${keyId}] routed to [${assigned}]`);
+  inputKey.value = '';
+  updateUI(0);
+});
+
+btnRandomKeys.addEventListener('click', () => {
+  if (cluster.activeServers.size === 0) return alert("Spin up a server node first!");
+  for(let i=0; i<10; i++) {
+    cluster.addDataKey(`data_${Math.floor(Math.random()*9999)}`);
+  }
+  logEvent(`Batch inserted 10 random data keys.`);
+  updateUI(0);
+});
+
+btnReset.addEventListener('click', () => {
+  cluster.ring = [];
+  cluster.activeServers.clear();
+  cluster.keys = [];
+  document.getElementById('event-log').innerHTML = '';
+  updateUI(0);
+});
+
+toggleVnodes.addEventListener('change', () => {
+  cluster.virtualNodesPerServer = toggleVnodes.checked ? 3 : 0;
+  // Rebuild the entire ring with or without replicas
+  const currentServers = Array.from(cluster.activeServers);
+  cluster.ring = [];
+  cluster.activeServers.clear();
+  currentServers.forEach(s => cluster.addServer(s)); 
+  
+  logEvent(`Virtual nodes ${toggleVnodes.checked ? 'enabled' : 'disabled'}. Ring re-hashed.`);
+  updateUI(cluster.recalculateKeys());
+});
+
+
+updateUI();
