@@ -4,13 +4,14 @@
 // A simple hashing algorithm that converts any string into a 32-bit integer,
 // and then maps it to a 360-degree circle for our visual ring.
 function hashString(str) {
-  let hash = 0;
+  // FNV-1a Hash Algorithm: 
+  // Brilliantly scatters similar strings across the ring randomly.
+  let hash = 2166136261; 
   for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
+    hash ^= str.charCodeAt(i);
+    // Math.imul safely does 32-bit integer multiplication
+    hash = Math.imul(hash, 16777619); 
   }
-  // Map to 0-359 degrees
   return Math.abs(hash) % 360;
 }
 
