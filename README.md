@@ -1,11 +1,13 @@
-<div align="center">
-  
+  <div align="center">
+    
   # Consistent Hashing Visualized
   
   A high-performance, interactive visualizer explaining how modern distributed caches and databases scale horizontally without rehashing all their data.
+  </div>
+  
+  https://github.com/user-attachments/assets/9467ef84-23aa-4715-86ee-f223cb0c40ae
 
-  <img src="./consisten-hashing-demo.gif" alt="Consistent Hashing Visualized Demo" width="800"/>
-</div>
+
 
 ### Live Demo
 [**Click here to view the live visualization**](https://imhammad.github.io/consistent-hashing-visualized/)
