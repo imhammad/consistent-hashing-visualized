@@ -11,7 +11,7 @@
 [**Click here to view the live visualization**](https://imhammad.github.io/consistent-hashing-visualized/)
 
 ## Why I Built This
-I firmly believe that if you truly understand a complex Computer Science concept, you should be able to explain it simply. I learn best by building visual tools. Consistent Hashing is a brilliant system design pattern, but reading pseudocode about it can be confusing. I built this interactive web engine to let developers actually *see* a cache stampede being prevented in real time.
+I firmly believe that if you truly understand a complex Computer Science concept, you should be able to explain it simply. I learn best by building visual tools. Consistent Hashing is a brilliant system design pattern, but reading pseudocode about it can be confusing. I built this interactive web engine to let developers actually *see* a cache stampede being prevented in real time. By allowing users to dynamically add or drop servers on the fly, the elegance of the key redistribution finally clicks. Ultimately, my hope is that this hands-on experience bridges the gap between abstract theory and practical understanding.
 
 ## How It Works (The Logic)
 Instead of standard modulo hashing (`hash(key) % N`), which forces almost all data to find a new home when a single server crashes, this algorithm maps both servers and data onto the same 360-degree mathematical ring. 
