@@ -26,7 +26,7 @@ Instead of standard modulo hashing (`hash(key) % N`), which forces almost all da
 I chose to build this without heavy frameworks. 
 * **Vanilla JavaScript:** Handles the FNV-1a math, the ring data structure, and the routing logic.
 * **HTML5 Canvas & requestAnimationFrame:** Used to render the 60FPS animations, pulsing glows, and dynamic data streams mathematically, ensuring maximum browser performance.
-* **CSS3:** Custom dark-mode terminal UI built with native CSS Grid and Flexbox.
+* **CSS3:** Custom dark-mode terminal UI built with native CSS Grid and Flexbox and the responsive designing.
 
 ## Run It Locally
 1. Clone the repository:
